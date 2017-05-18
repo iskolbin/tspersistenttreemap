@@ -28,7 +28,7 @@ export class TreeNode<K,V> {
 		return this.v === TreeNode.DEL
 	}
 
-	skew(): TreeNode<K,V> {
+	protected skew(): TreeNode<K,V> {
 		if ( !this.isNil()) {
 			const {k, v, l, r, lvl} = this
 			const {k: lk, v: lv, l: ll, r: lr, lvl: llvl} = l
@@ -40,7 +40,7 @@ export class TreeNode<K,V> {
 		return this
 	}
 
-	split(): TreeNode<K,V> {
+	protected split(): TreeNode<K,V> {
 		if ( !this.isNil()) {
 			const {k, v, l, r, lvl} = this
 			if ( !r.isNil()) {
@@ -55,7 +55,7 @@ export class TreeNode<K,V> {
 		return this
 	}
 
-	setRebalance(): TreeNode<K,V> {
+	protected setRebalance(): TreeNode<K,V> {
 		return this.split().skew()
 	}
 
@@ -96,16 +96,31 @@ export class TreeNode<K,V> {
 	delete( key: K ): TreeNode<K,V> {
 		return this.set( key, TreeNode.DEL )
 	}
-	
+
+	iterator(): IterableIterator<[K,V]> {
+		const root: TreeNode<K,V> = this
+		const gen = function*() {
+			const stack: TreeNode<K,V>[] = root.isNil() ? [] : [ root ]
+			for ( let node = stack.pop(); node !== undefined; node = stack.pop()){
+				const {k, v, l, r} = node
+				if ( !l.isNil() ) stack.push( l )
+				if ( !r.isNil() ) stack.push( r )
+				if ( !node.isDel() ) yield (<[K,V]>[k,v])
+			}
+		}
+		return gen()
+	}
+
 	forEach<Z>( map: TreeMap<K,V>, callbackFn: (this: Z, value: V, key: K, map: TreeMap<K,V>) => void, thisArg?: Z ): void {
-		if ( !this.isNil()) {
-			const {k, v, l, r} = this
-			l.forEach( map, callbackFn, thisArg )
-			if ( v !== TreeNode.DEL ) callbackFn.call( thisArg, v, k, map )
-			r.forEach( map, callbackFn, thisArg )
+		const stack: TreeNode<K,V>[] = this.isNil() ? [] : [ this ]
+		for ( let node = stack.pop(); node !== undefined; node = stack.pop()){
+			const {k, v, l, r} = node
+			if ( !l.isNil() ) stack.push( l )
+			if ( !r.isNil() ) stack.push( r )
+			if ( !node.isDel() ) callbackFn.call( thisArg, v, k, map )
 		}
 	}
-	
+
 	reduce<U>( map: TreeMap<K,V>, callbackFn: (acc: U, value: V, key: K, map: TreeMap<K,V>) => U, initialValue: U ): U {
 		if ( this.isNil()) {
 			return initialValue

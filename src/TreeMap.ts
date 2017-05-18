@@ -15,21 +15,23 @@ export class TreeMap<K,V> {
 		return v instanceof TreeMap
 	}
 
-	static of<K,V>( ...args: [K,V][] ) {
+	static of<K,V>( ...args: [K,V][] ): TreeMap<K,V> {
 		return new TreeMap<K,V>( args )
 	}
 
-	static ofObject<V>( obj: {[key: string]: V} ): TreeMap<string,V> {
+	static ofObject<V>( ...objs: {[key: string]: V}[] ): TreeMap<string,V> {
 		let map = new TreeMap<string,V>()
-		for ( const k in obj ) {
-			if ( obj.hasOwnProperty( k )) {
-				map = map.set( k, obj[k] )
+		for ( const obj of objs ) {
+			for ( const k in obj ) {
+				if ( obj.hasOwnProperty( k )) {
+					map = map.set( k, obj[k] )
+				}
 			}
 		}
 		return map
 	}
 
-	static ofNode<K,V>( node: TreeNode<K,V> ) {
+	protected static ofNode<K,V>( node: TreeNode<K,V> ): TreeMap<K,V> {
 		const v = new TreeMap<K,V>()
 		v.root = node
 		return v
@@ -61,10 +63,6 @@ export class TreeMap<K,V> {
 	forEach<Z>( callbackFn: (this: Z, value: V, key: K, map: TreeMap<K,V>) => void, thisArg?: Z ): void {
 		this.root.forEach( this, callbackFn, thisArg )
 	}
-
-	reduceLeft<U>( callbackFn: (acc: U, value: V, key: K, map: TreeMap<K,V>) => U, initialValue: U ): U {
-		return this.root.reduce<U>( this, callbackFn, initialValue )
-	}
 	
 	reduce<U>( callbackFn: (acc: U, value: V, key: K, map: TreeMap<K,V>) => U, initialValue: U ): U {
 		return this.root.reduce<U>( this, callbackFn, initialValue )
@@ -94,24 +92,29 @@ export class TreeMap<K,V> {
 		return n
 	}
 	
-	keys(): K[] {
-		return this.reduce(( acc: K[], _: V, k: K ): K[] => {
-			acc.push( k )
-			return acc
-		}, [] )
+	keys(): any {
+		const keys: K[] = []
+		this.forEach(( _: V, k: K ) => keys.push( k ))
+		return keys
 	}
 
 	values(): V[] {
-		return this.reduce(( acc: V[], v: V, _: K ): V[] => {
-			acc.push( v )
-			return acc
-		}, [] )
+		const values: V[] = []
+		this.forEach(( v: V, _: K ) => values.push( v ))
+		return values
 	}
 
 	entries(): [K,V][] {
-		return this.reduce(( acc: [K,V][], v: V, k: K ): [K,V][] => {
-			acc.push( [k,v] )
-			return acc
-		}, [] )
+		const entries: [K,V][] = []
+		this.forEach(( v: V, k: K ) => entries.push( [k,v] ))
+		return entries
 	}
+
+	iterator() {
+		return this.root.iterator()
+	}
+}
+
+if ( typeof Symbol !== 'undefined' && typeof Symbol.iterator !== 'undefined' ){
+	(<any>TreeMap).prototype[Symbol.iterator] = TreeMap.prototype.iterator
 }
