@@ -47,6 +47,10 @@ export class TreeMap<K,V> {
 		return TreeMap.ofNode( this.root.set( k, v ))
 	}
 
+	update( k: K, updater: (value: V, key: K, map: TreeMap<K,V>) => V ): TreeMap<K,V> {
+		return TreeMap.ofNode( this.root.set( k, updater( this.root.map.get( k ), k, this )))
+	}
+
 	get( k: K ): V | undefined {
 		const node = this.root.getNode( k )
 		return node.exists() ? node.v : undefined
